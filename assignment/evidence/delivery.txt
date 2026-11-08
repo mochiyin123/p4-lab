@@ -1,0 +1,24 @@
+Starting hop limit: 8
+
+TEST 1 - TUNNEL DELIVERY TO h2
+h1 python3 send.py 10.58.0.3 "delivery h2" --tunnel 2 --hops 8
+output:
+Received (tunnelled, dst_id=2, hop_limit=6) from 10.58.0.1 to 10.58.0.3, TTL 64: 'delivery h2'
+
+TEST 2 - TUNNEL DELIVERY TO h3
+h1 python3 send.py 10.58.0.3 "delivery h3" --tunnel 3 --hops 8
+output:
+Received (tunnelled, dst_id=3, hop_limit=6) from 10.58.0.1 to 10.58.0.3, TTL 64: 'delivery h3'
+
+
+TEST 3 - ORDINARY IPv4 FORWARDING
+h1 ping -c 2 h3
+output:
+PING 10.58.0.3 (10.58.0.3) 56(84) bytes of data.
+64 bytes from 10.58.0.3: icmp_seq=1 ttl=62 time=14.2 ms
+64 bytes from 10.58.0.3: icmp_seq=2 ttl=62 time=5.31 ms
+
+--- 10.58.0.3 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 5.312/9.770/14.229/4.458 ms
+

@@ -1,0 +1,95 @@
+s1 = tunnel.p4 (new 5-byte tunnel header)
+s2 = tunnel_v1.p4 (old 4-byte tunnel header)
+
+TEST 1 - MIXED VERSION DELIVERY
+COMMAND:
+h1 python3 send.py 10.58.0.3 "mixed" --tunnel 2 --hops 8
+
+OUTPUT:
+Ethernet type = 0x1212
+MyTunnel proto_id = 2048
+MyTunnel dst_id = 2
+MyTunnel hop_limit = 8
+IPv4 source = 10.58.0.1
+IPv4 destination = 10.58.0.3
+IPv4 TTL = 64
+UDP payload = 'mixed'
+
+Sent from h1-eth0.
+
+COMMAND:
+sh cat logs/h2.txt logs/h3.txt
+
+OUTPUT:
+Listening on h2-eth0...
+Listening on h3-eth0...
+
+s2 logs:
+[07:17:47.759] [bmv2] [D] [thread 53798] [0.0] [cxt 0] Parser state 'parse_myTunnel': key is 0800
+[07:17:47.759] [bmv2] [D] [thread 53798] [0.0] [cxt 0] Looking up key:
+* hdr.myTunnel.dst_id : 0002
+* hdr.myTunnel.dst_id : EXACT     0002
+
+[07:20:19.236] Table 'MyIngress.myTunnel_exact': hit with handle 1
+[07:20:19.236] Dumping entry 1
+Match key:
+* hdr.myTunnel.dst_id : EXACT 0002
+Action entry: MyIngress.myTunnel_forward - 2,
+Transmitting packet of size 52 out of port 2
+
+[07:20:19.236] Action MyIngress.myTunnel_forward
+[07:20:19.236] Egress port is 2
+[07:20:19.236] Deparsing header 'myTunnel'
+[07:20:19.236] Deparsing header 'ipv4'
+[07:20:19.236] Transmitting packet of size 52 out of port 2
+
+TCPDUMP:
+07:20:19.236731 00:00:00:00:00:01 > ff:ff:ff:ff:ff:ff,
+ethertype Unknown (0x1212), length 52:
+
+0x0000:  ffff ffff ffff 0000 0000 0001 1212 0800
+0x0010:  0002 0745 0000 2100 0100 0040 0d66 540a
+0x0020:  3a00 010a 3a00 0310 e110 e100 0d7f cb6d
+0x0030:  6978 6564
+
+1 packet captured
+1 packet received by filter
+0 packets dropped by kernel
+
+
+TEST 2 - MIXED VERSION FORWARDING LOOP
+COMMAND:
+h1 python3 send.py 10.58.0.3 "mixed loop" --tunnel 3 --hops 8
+
+OUTPUT:
+MyTunnel dst_id = 3
+MyTunnel hop_limit = 8
+IPv4 TTL = 64
+Payload = 'mixed loop'
+
+Sent from h1-eth0.
+
+
+COMMAND:
+sh grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+OUTPUT:
+logs/s1.txt:1398
+logs/s2.txt:1395
+
+
+COMMAND:
+sh sleep 5; grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+OUTPUT:
+logs/s1.txt:1398
+logs/s2.txt:1395
+
+s1 LOGS :
+[07:24:43.208] [2.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.212] [3.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.215] [4.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.220] [5.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.227] [6.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.231] [7.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.238] [8.0] Condition "hdr.myTunnel.hop_limit <= 1" is false
+[07:24:43.242] [9.0] Condition "hdr.myTunnel.hop_limit <= 1" is true
+[07:24:43.242] [9.0] Dropping packet at the end of ingress
