@@ -1,0 +1,12 @@
+sh grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:1388
+logs/s2.txt:1386
+
+sh sleep 5; grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:1388
+logs/s2.txt:1386
+
+S2 log:
+sh grep -E "Processing packet received|hop_limit <= 1|Dropping packet" logs/s2.txt | tail -25
+[06:55:52.629] [bmv2] [T] [thread 44857] [3.0] [cxt 0] tunnel.p4(126) Condition "hdr.myTunnel.hop_limit <= 1" (node_3) is true
+[06:55:52.630] [bmv2] [D] [thread 44857] [3.0] [cxt 0] Dropping packet at the end of ingress
