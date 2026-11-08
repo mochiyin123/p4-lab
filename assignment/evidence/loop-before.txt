@@ -1,0 +1,8 @@
+sh grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:328
+logs/s2.txt:327
+
+sh sleep 5; grep -c "Processing packet received" logs/s1.txt logs/s2.txt
+logs/s1.txt:1509
+logs/s2.txt:1509
+
